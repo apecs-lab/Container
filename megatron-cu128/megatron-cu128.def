@@ -4,20 +4,16 @@ From: nvcr.io/nvidia/pytorch:25.02-py3
 
 %environment
     # ---- Core Environment Variables ----
-    export LANG=en_US.UTF-8
-    export LC_ALL=en_US.UTF-8
     export PYTHONUNBUFFERED=1
     export PYTHONNOUSERSITE=1
 
 %post
     # ---- 1. Install Minimal OS Utilities ----
     apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        git curl wget build-essential cmake ninja-build
+        build-essential ninja-build
     
-    # ---- 2. Inject Modern Python Package Manager (uv) ----
-    # Installed globally inside the container
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="/root/.local/bin:$PATH"
+    # ---- 2. Install megatron-core ----
+    pip install --no-build-isolation "megatron-core==0.11.*"
 
     # ---- 3. Cleanup to Keep Image Lean ----
     apt-get clean
@@ -27,4 +23,3 @@ From: nvcr.io/nvidia/pytorch:25.02-py3
     # ---- Sanity Checks ----
     # Ensure NGC's native optimized stack and uv are ready out of the box
     python -c "import torch; print('NGC PyTorch version:', torch.__version__)"
-    command -v uv >/dev/null 2>&1 && echo "uv engine: READY" || echo "uv engine: NOT FOUND"
