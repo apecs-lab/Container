@@ -3,23 +3,23 @@ Bootstrap: docker
 From: nvcr.io/nvidia/pytorch:25.02-py3
 
 %environment
-    # ---- Core Environment Variables ----
     export PYTHONUNBUFFERED=1
     export PYTHONNOUSERSITE=1
+    # ---- Triton Fix: Inject the patched folder into dynamic linker priority list ----
+    export TRITON_LIBCUDA_PATH="/opt/nvidia/compat_patch"
 
 %post
-    # ---- 1. Install Minimal OS Utilities ----
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        build-essential ninja-build
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential ninja-build
     
-    # ---- 2. Install megatron-core ----
     pip install --no-build-isolation "megatron-core==0.11.*"
 
-    # ---- 3. Cleanup to Keep Image Lean ----
+    # ---- Triton Driver Path Patch (RELATIVE LINK FOR HPC) ----
+    mkdir -p /opt/nvidia/compat_patch && cd /opt/nvidia/compat_patch
+    ln -sf /usr/local/cuda/compat/lib/libcuda.so.1 ./libcuda.so.1
+    ln -sf libcuda.so.1 ./libcuda.so
+
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
 %test
-    # ---- Sanity Checks ----
-    # Ensure NGC's native optimized stack and uv are ready out of the box
     python -c "import torch; print('NGC PyTorch version:', torch.__version__)"
