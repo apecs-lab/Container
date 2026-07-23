@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -l select=2:system=polaris
+#PBS -q debug
+#PBS -l place=scatter
+#PBS -l walltime=01:00:00
+#PBS -l filesystems=home:eagle:grand
+#PBS -l singularity_fakeroot=true
+#PBS -A lc-mpi
+#PBS -j oe
+#PBS -N megatron_multinode
+
+set -x
+
+cd ${PBS_O_WORKDIR}
+
+source /etc/profile
+
+ml use /soft/modulefiles
+ml spack-pe-base
+ml apptainer
+
+export BASE_SCRATCH_DIR=/local/scratch/
+export APPTAINER_TMPDIR=$BASE_SCRATCH_DIR/apptainer-tmpdir
+mkdir -p $APPTAINER_TMPDIR
+export APPTAINER_CACHEDIR=$BASE_SCRATCH_DIR/apptainer-cachedir
+mkdir -p $APPTAINER_CACHEDIR
+
+# Proxy setup for internet access
+export HTTP_PROXY=http://proxy.alcf.anl.gov:3128
+export HTTPS_PROXY=http://proxy.alcf.anl.gov:3128
+export http_proxy=http://proxy.alcf.anl.gov:3128
+export https_proxy=http://proxy.alcf.anl.gov:3128
+
+# Execute multi-node Megatron training
+bash ./test-multinode.sh
